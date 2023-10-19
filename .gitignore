@@ -1,3 +1,5 @@
 .vscode/*
 .DS_Store
 srccode/testing.ipynb
+srccode\testing.ipynb
+.srccode\testing.ipynb
