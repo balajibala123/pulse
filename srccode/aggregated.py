@@ -246,3 +246,255 @@ def aggDataUsers(QUARTER, YEAR):
     UsersData['state']= UsersData['state'].map(state_mapping)
 
     return UsersData
+
+# Tranaction by category 
+def aggDataTransCategory(QUARTER, YEAR):
+
+    db,mycursor = MyCursor()
+    # Payment categories 
+    mycursor.execute("""select 
+    quarter, 
+    year, 
+    name as Transactions_Name,
+    sum(count) as All_Trans,
+    sum(amount) as Total_Pay_value
+    from aggdatatrans
+    group by quarter, year, name ;""")
+
+    out = mycursor.fetchall()
+    data = list(out)
+
+    columns = ['quarter', 'year', 'Transactions_Name', 'Transcations', 'Payment_Value']
+
+    DataTransactionName = pd.DataFrame(data, columns=columns)
+    DataTransactionName['Transcations'] = DataTransactionName['Transcations'].astype(np.int64)
+    DataTransactionName['Payment_Value'] = np.int64(round(DataTransactionName['Payment_Value'],0))
+    DataTransactionName = DataTransactionName[(DataTransactionName['quarter'] == QUARTER) & (DataTransactionName['year'] == YEAR)]
+
+
+    DataTransactionName['Total_Transactions'] = sum(DataTransactionName['Transcations'])
+    DataTransactionName['Total_Payment_Value'] = np.int64(round(sum(DataTransactionName['Payment_Value'])/10000000,0))
+    DataTransactionName['Avg_Transaction_Value'] = np.int64(round(sum(DataTransactionName['Payment_Value']) / sum(DataTransactionName['Transcations']),0))
+
+    return DataTransactionName
+
+
+# MAP STATES TRANS and USERS
+# Transaction by Top 10 STATES 
+def StateTransactions(QUARTER, YEAR):
+    db,mycursor = MyCursor()
+    mycursor.execute("""select
+        quarter,
+        year,
+        state,
+        sum(count) as count
+        from mapdatatrans 
+        group by quarter, year, state""")
+
+    out= mycursor.fetchall()
+    data = list(out)
+    # print(data)
+    columns = ['quarter', 'year', 'state', 'Transactions_Count']
+
+    def convert_to_crore_lakh(value):
+        if value >= 10000000:
+            return f'{value /10000000 : .2f} Cr'
+        else:
+            return f'{value / 100000 : .2f} L'
+
+    MapTransactionsState = pd.DataFrame(data=data, columns=columns)
+    MapTransactionsState['Transactions_Count'] = MapTransactionsState['Transactions_Count'].astype(np.int64)
+    MapTransactionsState = MapTransactionsState[(MapTransactionsState['year'] == YEAR) & (MapTransactionsState['quarter'] == QUARTER)]
+    MapTransactionsState['Rank'] = MapTransactionsState['Transactions_Count'].rank(ascending= False)
+    MapTransactionsState = MapTransactionsState.sort_values(by=['Transactions_Count', 'Rank'], ascending=[False, True])
+    MapTransactionsState = MapTransactionsState.reset_index(drop=True)
+    MapTransactionsState['Transacations_Count'] = MapTransactionsState['Transactions_Count'].apply(convert_to_crore_lakh)
+    MapTransactionsState.drop(columns=['Transactions_Count', 'Rank'], inplace=True)
+    TopStateTransactions = MapTransactionsState.head(10)
+    
+    return TopStateTransactions
+
+# Transactions by Top 10 Districts
+def DistrictTransactions(QUARTER, YEAR): 
+    db,mycursor = MyCursor()
+    mycursor.execute("""select 
+        quarter,
+        year,
+        district_name,
+        sum(count) as Transactions_Count
+        from topdatatransdistrict
+        group by quarter, year, district_name""")
+
+    out = mycursor.fetchall()
+    data = list(out)
+    columns = ['quarter', 'year', 'District_Name', 'Transactions_Count']
+
+    def convert_lakh_crore(value):
+        if value >= 10000000:
+            return f'{value / 10000000 : .2f} Cr'
+        else:
+            return f'{value / 100000 : .2f} L'
+        
+    DistrictTransactions = pd.DataFrame(data=data, columns=columns)
+    DistrictTransactions = DistrictTransactions[(DistrictTransactions['quarter']== QUARTER) & (DistrictTransactions['year'] == YEAR)]
+    DistrictTransactions['Rank'] = DistrictTransactions['Transactions_Count'].rank(ascending=False)
+    DistrictTransactions = DistrictTransactions.sort_values(by=['Transactions_Count', 'Rank'], ascending=[False, True])
+    DistrictTransactions = DistrictTransactions.reset_index(drop=True)
+    DistrictTransactions['Transactions_Count'] = DistrictTransactions['Transactions_Count'].apply(convert_lakh_crore)
+    DistrictTransactions.drop(columns=['Rank'], inplace=True)
+    TopDistrict = DistrictTransactions.head(10)
+    return TopDistrict
+
+# Transactions by Top 10 Pincodes
+def PincodeTransactions(QUARTER, YEAR):
+    db,mycursor = MyCursor()
+    mycursor.execute("""select
+        quarter,
+        year,
+        pincodes,
+        count as Transactions_Count
+        from topdatatranspincode
+        group by year, quarter, pincodes""")
+
+    out = mycursor.fetchall()
+    data = list(out)
+    columns = ['quarter', 'year', 'Pincodes', 'Transactions_Count']
+
+    def convert_lakh_crore(value):
+        if value >= 10000000:
+            return f'{value / 10000000 : .2f} Cr'
+        else:
+            return f'{value / 100000 : .2f} L'
+
+    PincodeTransactions = pd.DataFrame(data=data, columns=columns)
+    # PincodeTransactions
+    PincodeTransactions = PincodeTransactions[(PincodeTransactions['quarter'] == QUARTER) & (PincodeTransactions['year'] == YEAR)]
+    PincodeTransactions['Rank'] = PincodeTransactions['Transactions_Count'].rank(ascending=False)
+    PincodeTransactions = PincodeTransactions.sort_values(by=['Transactions_Count', 'Rank'], ascending=[False,True])
+    PincodeTransactions = PincodeTransactions.reset_index(drop=True)
+    PincodeTransactions['Transactions_Count'] = PincodeTransactions['Transactions_Count'].apply(convert_lakh_crore)
+    PincodeTransactions.drop(columns=['Rank'], inplace=True)
+    TopPincode = PincodeTransactions.head(10)
+    return TopPincode
+
+# Users RegisteredUsers and appOpens in phonepe
+def UsersCategory(QUARTER, YEAR): 
+    db,mycursor = MyCursor()   
+    mycursor.execute("""select
+        quarter,
+        year,
+        sum(registeredUsers),
+        sum(appOpens)
+        from mapdatausers
+        group by quarter, year""")
+
+    out = mycursor.fetchall()
+    data = list(out)
+    columns = ['quarter', 'year', 'RegisteredUsers', 'AppOpens']
+
+    def covert_crore_lakh(value):
+        if value >= 10000000:
+            return f'{value/10000000 : .7f} cr'
+        else:
+            return f'{value/100000 : .6f} L'
+    UsersAppOpens = pd.DataFrame(data=data, columns=columns)
+    UsersAppOpens = UsersAppOpens[(UsersAppOpens['quarter'] == QUARTER) & (UsersAppOpens['year'] == YEAR)]
+    UsersAppOpens[['RegisteredUsers', 'AppOpens']] = UsersAppOpens[['RegisteredUsers', 'AppOpens']].applymap(covert_crore_lakh)
+    UsersAppOpens['year'] = UsersAppOpens['year'].astype(str)
+    return UsersAppOpens
+
+# Users by Top 10 States
+def StateUsers(QUARTER, YEAR):
+    db,mycursor = MyCursor() 
+    mycursor.execute("""select
+        quarter,
+        year,
+        state,
+        sum(registeredUsers) as registeredUsers
+        from mapdatausers
+        group by quarter, year, state;""")
+
+    out = mycursor.fetchall()
+    data = list(out)
+    columns = ['quarter','year','state', 'registeredUsers']
+
+    def convert_to_crore_lakh(value):
+        if value >= 10000000:
+            return f'{value / 10000000 : .2f} Cr'
+        else:
+            return f'{value / 100000: .2f} L'
+
+    DataUsersState = pd.DataFrame(data=data, columns=columns)
+    DataUsersState = DataUsersState[(DataUsersState['quarter'] == QUARTER) & (DataUsersState['year']== YEAR)]
+    DataUsersState['Rank'] = DataUsersState['registeredUsers'].rank(ascending=False)
+    DataUsersState = DataUsersState.sort_values(by=['registeredUsers', 'Rank'], ascending=[False, True])
+    DataUsersState = DataUsersState.reset_index(drop=True)
+    DataUsersState['registeredUsers'] = DataUsersState['registeredUsers'].apply(convert_to_crore_lakh)
+    DataUsersState.drop(columns=['Rank'], inplace=True)
+    TopStateUsers = DataUsersState.head(10)
+    
+    return TopStateUsers
+
+# Users By Top 10 district
+def TopDistrictUsers(QUARTER, YEAR):
+    db,mycursor = MyCursor()
+    mycursor.execute("""select 
+        quarter,
+        year,
+        district_name,
+        registeredUsers
+        from topdatausersdistrict
+        group by quarter, year, district_name""")
+
+    out = mycursor.fetchall()
+    data = list(out)
+    columns = ['quarter', 'year', 'District_Name', 'RegisteredUsers']
+
+    def convert_lakh_crore(value):
+        if value >= 10000000:
+            return f'{value/10000000 : .2f} Cr'
+        else:
+            return f'{value/100000 : .2f} L'
+        
+    DistrictUsers = pd.DataFrame(data=data, columns=columns)
+    DistrictUsers = DistrictUsers[(DistrictUsers['quarter'] == QUARTER) & (DistrictUsers['year']== YEAR)]
+    DistrictUsers['Rank'] = DistrictUsers['RegisteredUsers'].rank(ascending= False)
+    DistrictUsers = DistrictUsers.sort_values(by=['RegisteredUsers', 'Rank'], ascending=[False, True])
+    DistrictUsers['RegisteredUsers'] = DistrictUsers['RegisteredUsers'].apply(convert_lakh_crore)
+    DistrictUsers.drop(columns=['Rank'], inplace=True)
+    TopDistrictUsers = DistrictUsers.head(10)
+    return TopDistrictUsers
+
+# Users By Top 10 Pincodes
+def TopPincodeUsers(QUARTER, YEAR): 
+    db,mycursor = MyCursor()
+    mycursor.execute("""select 
+        quarter,
+        year,
+        Pincodes,
+        RegisteredUsers
+        from topdatauserspincode
+        group by quarter, year, pincodes""")
+
+    out = mycursor.fetchall()
+    data = list(out)
+    columns = ['quarter', 'year', 'Pincodes', 'RegisteredUsers']
+
+    def convert_lakh_crore(value):
+        if value >= 100000:
+            return f'{value/100000 : .2f} L'
+        else:
+            return f'{value /1000 : .2f} K'
+
+    TopPincodeUsers = pd.DataFrame(data=data, columns=columns)
+    TopPincodeUsers = TopPincodeUsers[(TopPincodeUsers['year'] == YEAR) & (TopPincodeUsers['quarter'] == QUARTER)]
+    TopPincodeUsers['Rank'] = TopPincodeUsers['RegisteredUsers'].rank(ascending=False)
+    # TopPincodeUsers
+    TopPincodeUsers = TopPincodeUsers.sort_values(by=['RegisteredUsers', 'Rank'], ascending=[False, True])
+    TopPincodeUsers = TopPincodeUsers.reset_index(drop=True)
+    TopPincodeUsers['RegisteredUsers'] = TopPincodeUsers['RegisteredUsers'].apply(convert_lakh_crore)
+    TopPincodeUsers.drop(columns=['Rank'], inplace=True)
+    TopPincodeUsers= TopPincodeUsers.head(10)
+    return TopPincodeUsers
+
+
