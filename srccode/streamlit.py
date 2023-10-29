@@ -42,6 +42,8 @@ data_options = st.sidebar.selectbox("Select Data Options:", ('States', 'District
 
 if st.sidebar.button("Submit"):
     if data_type == "Transcations":
+        col1, col2 = st.columns([1,2])
+        
         #  --------------------------------------------------------------------------------------------------------------------------
         # Displaying category
         # Assuming you have already calculated result_Category
@@ -59,54 +61,57 @@ if st.sidebar.button("Submit"):
         st.sidebar.write(f"Avg Transaction Value: {Avg_Transaction_Value:,.0f}")
         st.sidebar.markdown(result_Category[['Transactions_Name', 'Transcations']].to_markdown(index=False), unsafe_allow_html=True)
         
-        if data_options == "States":
-            # Top 10 Trans States 
-            Top10TransactionsState = StateTransactions(Quarter, Year)
-            st.sidebar.subheader("Top 10 States Transactions")
-            st.sidebar.markdown(Top10TransactionsState[['state','Transacations_Count']].to_markdown(index=False), unsafe_allow_html=True)       
-        elif data_options == 'Districts':
-            Top10Districts = DistrictTransactions(Quarter, Year)
-            st.sidebar.subheader("Top 10 Districts Transactions")
-            st.sidebar.markdown(Top10Districts[['District_Name', 'Transactions_Count']].to_markdown(index=False), unsafe_allow_html=True)
-        elif data_options == "Postal_Codes":
-            Top10Pincodes = PincodeTransactions(Quarter, Year)
-            st.sidebar.subheader("Top 10 Postal Codes")
-            st.sidebar.markdown(Top10Pincodes[['Pincodes', 'Transactions_Count']].to_markdown(index=False), unsafe_allow_html=True)
+        with col1: 
+            if data_options == "States":
+                # Top 10 Trans States 
+                Top10TransactionsState = StateTransactions(Quarter, Year)
+                st.subheader("Top 10 States Transactions")
+                st.markdown(Top10TransactionsState[['state','Transacations_Count']].to_markdown(index=False), unsafe_allow_html=True)       
+            elif data_options == 'Districts':
+                Top10Districts = DistrictTransactions(Quarter, Year)
+                st.subheader("Top 10 Districts Transactions")
+                st.markdown(Top10Districts[['District_Name', 'Transactions_Count']].to_markdown(index=False), unsafe_allow_html=True)
+            elif data_options == "Postal_Codes":
+                Top10Pincodes = PincodeTransactions(Quarter, Year)
+                st.subheader("Top 10 Postal Codes")
+                st.markdown(Top10Pincodes[['Pincodes', 'Transactions_Count']].to_markdown(index=False), unsafe_allow_html=True)
 
-        # ---------------------------------------------------------------------------------------------------------------------------
-        # Displaying Maps
-        result = aggDataTrans(Quarter, Year)
-    
+        with col2:
+            # ---------------------------------------------------------------------------------------------------------------------------
+            # Displaying Maps
+            result = aggDataTrans(Quarter, Year)
+        
 
-        # Create a custom hover template to display the desired columns
-        hover_template = "<b>%{location}</b><br>" + \
-                        "All Transactions: %{customdata[0]:.0f}<br>" + \
-                        "Total Payment Value: %{customdata[1]:.0f} Cr<br>" + \
-                        "Avg Transactions Value: %{customdata[2]:.0f}"
+            # Create a custom hover template to display the desired columns
+            hover_template = "<b>%{location}</b><br>" + \
+                            "All Transactions: %{customdata[0]:.0f}<br>" + \
+                            "Total Payment Value: %{customdata[1]:.0f} Cr<br>" + \
+                            "Avg Transactions Value: %{customdata[2]:.0f}"
 
-        fig = px.choropleth(
-            result,
-            geojson="https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson",
-            featureidkey='properties.ST_NM',
-            locations='state',
-            color='All_Transactions',
-            custom_data=['All_Transactions', 'Total_Payment_Value', 'Avg_Transactions_Value'],
-            hover_name= result.index,
-            color_continuous_scale='Reds',
-        )
+            fig = px.choropleth(
+                result,
+                geojson="https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson",
+                featureidkey='properties.ST_NM',
+                locations='state',
+                color='All_Transactions',
+                custom_data=['All_Transactions', 'Total_Payment_Value', 'Avg_Transactions_Value'],
+                hover_name= result.index,
+                color_continuous_scale='Reds',
+            )
 
-        # # Set the hover template
-        fig.update_traces(
-            hovertemplate=hover_template
-        )
+            # # Set the hover template
+            fig.update_traces(
+                hovertemplate=hover_template
+            )
+            fig.update_layout(geo=dict(
+                center={'lon': 78.9629, 'lat': 20.5937},
+                projection_scale=5),
+                width = 900,
+                height = 600)
 
-        fig.update_geos(fitbounds="locations", visible=False)
-        fig.update_layout(geo=dict(
-            center={'lon': 78.9629, 'lat': 20.5937},
-            projection_scale=5))
-        # # fig.show()
+            fig.update_geos(fitbounds="locations", visible=False)
 
-        st.plotly_chart(fig)
+            st.plotly_chart(fig)
 
     elif data_type == 'Users':
         UsersRegistered = UsersCategory(Quarter,Year)
@@ -114,60 +119,65 @@ if st.sidebar.button("Submit"):
         st.sidebar.markdown(UsersRegistered['RegisteredUsers'].to_markdown(index=False), unsafe_allow_html=True)
         st.sidebar.subheader("PhonePe app opens")
         st.sidebar.markdown(UsersRegistered['AppOpens'].to_markdown(index=False), unsafe_allow_html=True)
+        col1, col2 = st.columns([1,2])
 
-        # Top 10 Users State
-        if data_options == 'States':
-            Top10UsersState = StateUsers(Quarter, Year)
-            st.sidebar.subheader("Top 10 State RegisteredUsers")
-            st.sidebar.markdown(Top10UsersState[['state','registeredUsers']].to_markdown(index=False), unsafe_allow_html=True)
-        
-        elif data_options == 'Districts':
-            Top10UDistrictUsers = TopDistrictUsers(Quarter, Year)
-            st.sidebar.subheader("Top 10 Districts RegisteredUsers")
-            st.sidebar.markdown(Top10UDistrictUsers[['District_Name', 'RegisteredUsers']].to_markdown(index=False), unsafe_allow_html=True)
-        
-        elif data_options == 'Postal_Codes':
-            Top10PincodeUsers = TopPincodeUsers(Quarter, Year)
-            st.sidebar.subheader("Top 10 Pincode RegistedUsers")
-            st.sidebar.markdown(Top10PincodeUsers[['Pincodes', 'RegisteredUsers']].to_markdown(index=False), unsafe_allow_html=True)
-        
+        with col1:
+            # Top 10 Users State
+            if data_options == 'States':
+                Top10UsersState = StateUsers(Quarter, Year)
+                st.subheader("Top 10 State RegisteredUsers")
+                st.markdown(Top10UsersState[['state','registeredUsers']].to_markdown(index=False), unsafe_allow_html=True)
+            
+            elif data_options == 'Districts':
+                Top10UDistrictUsers = TopDistrictUsers(Quarter, Year)
+                st.subheader("Top 10 Districts RegisteredUsers")
+                st.markdown(Top10UDistrictUsers[['District_Name', 'RegisteredUsers']].to_markdown(index=False), unsafe_allow_html=True)
+            
+            elif data_options == 'Postal_Codes':
+                Top10PincodeUsers = TopPincodeUsers(Quarter, Year)
+                st.subheader("Top 10 Pincode RegistedUsers")
+                st.markdown(Top10PincodeUsers[['Pincodes', 'RegisteredUsers']].to_markdown(index=False), unsafe_allow_html=True)
+            
         #  ------------------------------------------------------------------------------------------------------------------
 
-        # AggDataUsers showing Map for registeredusers and app opens
-        result = aggDataUsers(Quarter, Year)
-        # Create a custom hover template to display the desired columns
-        hover_template = "<b>%{location}</b><br>" + \
-                        "registeredUsers: %{customdata[0]:.0f}<br>" + \
-                        "appOpens: %{customdata[1]:.0f}"
+        with col2:
+            # AggDataUsers showing Map for registeredusers and app opens
+            result = aggDataUsers(Quarter, Year)
+            # Create a custom hover template to display the desired columns
+            hover_template = "<b>%{location}</b><br>" + \
+                            "registeredUsers: %{customdata[0]:.0f}<br>" + \
+                            "appOpens: %{customdata[1]:.0f}"
 
-        fig = px.choropleth(
-            result,
-            geojson="https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson",
-            featureidkey='properties.ST_NM',
-            locations='state',
-            color='registeredUsers',
-            custom_data=['registeredUsers','appOpens'],
-            hover_name= result.index,
-            color_continuous_scale='Viridis',
-
-        )
-
-        # Set the hover template
-        fig.update_traces(
-            hovertemplate=hover_template
-        )
-
-        fig.update_geos(fitbounds="locations", visible=False)
-
-        fig.update_layout(geo=dict(
-            center={'lon': 78.9629, 'lat': 20.5937},
-            projection_scale= 5)
-            # width=800,  # Set the width of the figure
-            # height=600,  # Set the height of the figure
-            # plot_bgcolor='lightblue'  # Set the background color
-            
+            fig = px.choropleth(
+                result,
+                geojson="https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson",
+                featureidkey='properties.ST_NM',
+                locations='state',
+                color='registeredUsers',
+                custom_data=['registeredUsers','appOpens'],
+                hover_name= result.index,
+                color_continuous_scale='Viridis',
+                
             )
-        
-        # fig.show()
-        st.plotly_chart(fig)
+
+            # Set the hover template
+            fig.update_traces(
+                hovertemplate=hover_template
+            )
+
+            fig.update_geos(fitbounds="locations", visible=False)
+
+            fig.update_layout(geo=dict(
+                center={'lon': 78.9629, 'lat': 20.5937},
+                projection_scale= 5),
+                width= 900,  # Set the width of the figure
+                height= 600,  # Set the height of the figure
+                plot_bgcolor='lightblue'  # Set the background color
+                
+                )
+
+            # fig.update_layout(height=600)
+            
+            # fig.show()
+            st.plotly_chart(fig)
 
