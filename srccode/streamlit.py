@@ -19,8 +19,25 @@ st.set_page_config(layout="wide")
 st.title("Streamlit App with Data Selection and Interactive Map")
 
 data_type = st.sidebar.selectbox("Select Data Type:", ('Transcations', 'Users'))
-Year = st.sidebar.selectbox('Select Year:', list(range(2018, 2024)))
-Quarter = st.sidebar.selectbox('Select Quarter:', ["Q1","Q2","Q3","Q4"])
+# Year = st.sidebar.selectbox('Select Year:', list(range(2018, 2024)))
+# Quarter = st.sidebar.selectbox('Select Quarter:', ["Q1","Q2","Q3","Q4"])
+
+# Define the list of years and quarters
+years = list(range(2018, 2024))
+quarters = ["Q1", "Q2", "Q3", "Q4"]
+
+# Get the selected year from the user
+Year = st.sidebar.selectbox('Select Year:', years)
+
+# If the selected year is 2023, remove "Q4" from the quarters list
+if Year == 2023:
+    available_quarters = quarters[:-1]  # Remove the last element ("Q4")
+else:
+    available_quarters = quarters
+
+# Get the selected quarter from the user
+Quarter = st.sidebar.selectbox('Select Quarter:', available_quarters)
+
 data_options = st.sidebar.selectbox("Select Data Options:", ('States', 'Districts', 'Postal_Codes'))
 
 if st.sidebar.button("Submit"):

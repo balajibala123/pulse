@@ -2,7 +2,7 @@ from pathlib import Path
 import pandas as pd
 import json
 import datetime
-import mysql.connector
+from DatabaseConnection import MyCursor
 import numpy as np
 
 # Aggregated Data Transactions
@@ -61,22 +61,6 @@ dataTransaction['amount'] = dataTransaction['amount'].astype(float)
 # dataTransaction['country'] = 'India'
 data_trans = dataTransaction
 
-
-def MyCursor():
-    # Database Connection
-    db = mysql.connector.connect(
-        host ='localhost',
-        user = 'root',
-        password ='balaji',
-        database = 'pulse'
-    )
-
-    mycursor = db.cursor(buffered=True)
-
-    db.commit()
-
-    return db, mycursor
-
 def aggDataTransTable():
     db,mycursor = MyCursor()
     mycursor.execute("create database if not exists pulse")
@@ -98,7 +82,6 @@ def aggDataTransTable():
         mycursor.execute(sql,i)
 
     db.commit()
-
 
 def aggDataTrans(QUARTER, YEAR):
     db,mycursor = MyCursor()
