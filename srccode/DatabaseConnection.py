@@ -21,7 +21,5 @@ def MyCursor():
     )
 
     mycursor = db.cursor(buffered=True)
-
     db.commit()
-
     return db, mycursor
